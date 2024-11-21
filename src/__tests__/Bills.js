@@ -9,7 +9,7 @@ import {
     waitFor,
 } from "@testing-library/dom";
 import { bills } from "../fixtures/bills.js";
-import { ROUTES_PATH } from "../constants/routes.js";
+import { ROUTES, ROUTES_PATH } from "../constants/routes";
 import { localStorageMock } from "../__mocks__/localStorage.js";
 import "@testing-library/jest-dom/extend-expect.js";
 
@@ -55,33 +55,56 @@ describe("Given I am connected as an employee", () => {
             expect(dates).toEqual(datesSorted);
         });
         test("Then, it should open modal when new bill button is clicked", () => {
-            // Object.defineProperty(window, "localStorage", {
-            //     value: localStorageMock,
-            // });
-            // window.localStorage.setItem(
-            //     "user",
-            //     JSON.stringify({
-            //         type: "Employee",
-            //     })
-            // );
             document.body.innerHTML = BillsUI({ data: bills });
+            const onNavigate = (pathname) => {
+                document.body.innerHTML = ROUTES({ pathname });
+            };
             const billsConstructor = new Bills({
                 document,
                 onNavigate,
                 store: null,
                 localStorage: window.localStorage,
+                handleClickNewBill: jest.fn(),
             });
 
-            const handleClickNewBill = jest.fn(
-                billsConstructor.handleClickNewBill
-            );
+            const clickNewBill = jest.fn(billsConstructor.handleClickNewBill);
             const buttonNewBill = screen.getByTestId("btn-new-bill");
             expect(buttonNewBill).toBeTruthy();
-
-            buttonNewBill.addEventListener("click", () => handleClickNewBill);
+            buttonNewBill.addEventListener("click", () => clickNewBill());
             userEvent.click(buttonNewBill);
-            expect(handleClickNewBill).toHaveBeenCalled();
-            expect(screen.getByTestId("form-new-bill")).toBeTruthy();
+            expect(clickNewBill).toHaveBeenCalled();
+            expect(screen.getByTestId("form-new-bill")).toBeVisible();
+        });
+        test.only("Then, it should open the related bill when eye icon button is clicked", () => {
+            document.body.innerHTML = BillsUI({ data: bills });
+            const onNavigate = (pathname) => {
+                document.body.innerHTML = ROUTES({ pathname });
+            };
+            const billsConstructor = new Bills({
+                document,
+                onNavigate,
+                store: null,
+                localStorage: window.localStorage,
+                handleClickIconEye: jest.fn(),
+            });
+            // const mockIconEye = document.createElement("div");
+            // mockIconEye.id = "eye";
+            // mockIconEye.dataset.testid = "icon-eye";
+            // mockIconEye.dataset.billUrl =
+            //     "https://test.storage.tld/v0/b/billable-677b6.a…f-1.jpg?alt=media&token=c1640e12-a24b-4b11-ae52-529112e9602a";
+
+            const handleClickIconEye = jest.fn(
+                billsConstructor.handleClickIconEye
+            );
+
+            const buttonsIconEye = screen.getAllByTestId("icon-eye");
+
+            expect(buttonsIconEye).toBeTruthy();
+            buttonsIconEye.forEach((btn) =>
+                btn.addEventListener("click", handleClickIconEye(btn))
+            );
+            userEvent.click(buttonsIconEye[0]);
+            expect(handleClickIconEye).toHaveBeenCalled();
         });
     });
 });
