@@ -11,6 +11,7 @@ import {
 import { bills } from "../fixtures/bills.js";
 import { ROUTES, ROUTES_PATH } from "../constants/routes";
 import { localStorageMock } from "../__mocks__/localStorage.js";
+import store from "../__mocks__/store.js";
 import "@testing-library/jest-dom/extend-expect.js";
 
 import router from "../app/Router.js";
@@ -75,7 +76,7 @@ describe("Given I am connected as an employee", () => {
             expect(clickNewBill).toHaveBeenCalled();
             expect(screen.getByTestId("form-new-bill")).toBeVisible();
         });
-        test.only("Then, it should open the related bill when eye icon button is clicked", () => {
+        test("Then, it should open the related bill when eye icon button is clicked", () => {
             document.body.innerHTML = BillsUI({ data: bills });
             const onNavigate = (pathname) => {
                 document.body.innerHTML = ROUTES({ pathname });
@@ -92,7 +93,7 @@ describe("Given I am connected as an employee", () => {
             // mockIconEye.dataset.testid = "icon-eye";
             // mockIconEye.dataset.billUrl =
             //     "https://test.storage.tld/v0/b/billable-677b6.a…f-1.jpg?alt=media&token=c1640e12-a24b-4b11-ae52-529112e9602a";
-
+            $.fn.modal = jest.fn();
             const handleClickIconEye = jest.fn(
                 billsConstructor.handleClickIconEye
             );
@@ -103,8 +104,31 @@ describe("Given I am connected as an employee", () => {
             buttonsIconEye.forEach((btn) =>
                 btn.addEventListener("click", handleClickIconEye(btn))
             );
+            // fireEvent("click", buttonsIconEye[0]);
             userEvent.click(buttonsIconEye[0]);
             expect(handleClickIconEye).toHaveBeenCalled();
+        });
+
+        test(" GET Bills", async () => {
+            localStorage.setItem(
+                "user",
+                JSON.stringify({ type: "Employee", email: "a@a" })
+            );
+            const root = document.createElement("div");
+            root.setAttribute("id", "root");
+            document.body.append(root);
+            router();
+            window.onNavigate(ROUTES_PATH.Bills);
+            const mockedStore = store;
+            const billsConstructor = new Bills({
+                document,
+                onNavigate,
+                store: mockedStore,
+                localStorage: window.localStorage,
+            });
+            const getBills = jest.fn(billsConstructor.getBills);
+            const results = await getBills();
+            expect(results.length).toBe(4);
         });
     });
 });
