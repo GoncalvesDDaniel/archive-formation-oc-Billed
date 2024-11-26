@@ -15,7 +15,9 @@
             "!**/fixtures/**",
             "!**/lcov-report/**"
         ],
-        "testURL": "http://localhost/"
+        "testEnvironmentOptions": {
+            "url": "http://localhost/"
+        }
     },
     "type": "module",
     "dependencies": {
