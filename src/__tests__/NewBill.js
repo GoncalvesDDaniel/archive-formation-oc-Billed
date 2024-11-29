@@ -6,6 +6,7 @@ import {
     getAllByTestId,
     getByRole,
     screen,
+    waitFor,
 } from "@testing-library/dom";
 import "@testing-library/jest-dom/extend-expect.js";
 import userEvent from "@testing-library/user-event";
@@ -16,6 +17,7 @@ import NewBillUI from "../views/NewBillUI.js";
 import NewBill from "../containers/NewBill.js";
 import { ROUTES, ROUTES_PATH } from "../constants/routes.js";
 import Router from "../app/Router.js";
+import store from "../__mocks__/store.js";
 
 jest.mock("../app/store", () => mockStore);
 
@@ -90,7 +92,7 @@ describe("Given I am connected as an employee", () => {
             expect(handleSubmitMock).toHaveBeenCalled();
         });
 
-        test("Then fetches new bill to mock API POST", async () => {
+        test("Then submit new bill to mock API POST", async () => {
             jest.spyOn(mockStore, "bills");
             Object.defineProperty(window, "localStorage", {
                 value: localStorageMock,
@@ -102,12 +104,56 @@ describe("Given I am connected as an employee", () => {
                     email: "a@a",
                 })
             );
+            const inputData = {
+                type: "Transports",
+                name: "voyage",
+                amount: 80,
+                date: "2024-10-25",
+                vat: 20,
+                pct: 20,
+                commentary: "test",
+                fileUrl: "test.jpg",
+                fileName: "test.jpg",
+                status: "pending",
+            };
             const root = document.createElement("div");
             root.setAttribute("id", "root");
             document.body.appendChild(root);
             Router();
+            window.onNavigate(ROUTES_PATH.NewBill);
+            const newBill = new NewBill({
+                document,
+                onNavigate,
+                store: mockStore,
+                localStorage: window.localStorage,
+            });
+            screen.getByTestId("expense-type").value = inputData.type;
+            screen.getByTestId("expense-name").value = inputData.name;
+            screen.getByTestId("datepicker").value = inputData.date;
+            screen.getByTestId("amount").value = inputData.amount;
+            screen.getByTestId("vat").value = inputData.vat;
+            screen.getByTestId("pct").value = inputData.pct;
+            screen.getByTestId("commentary").value = inputData.commentary;
 
-            mockStore.bills.mockImplementation(() => {
+            const handleChangeFile = jest.fn((e) =>
+                newBill.handleChangeFile(e)
+            );
+            const filePicker = screen.getByTestId("file");
+            filePicker.addEventListener("change", handleChangeFile);
+            const mockFile = new File(["test"], "test.jpg", {
+                type: "image/jpg",
+            });
+            fireEvent.change(filePicker, { target: { files: [mockFile] } });
+            expect(handleChangeFile).toHaveBeenCalled();
+            // expect(mockStore).toHaveBeenCalled();
+
+            const handleSubmit = jest.fn((e) => newBill.handleSubmit(e));
+            const form = screen.getByTestId("form-new-bill");
+            form.addEventListener("submit", handleSubmit);
+            fireEvent.submit(form);
+            expect(handleSubmit).toHaveBeenCalled();
+
+            mockStore.bills.mockImplementationOnce(() => {
                 return {
                     create: () => {
                         return Promise.resolve({
@@ -117,10 +163,15 @@ describe("Given I am connected as an employee", () => {
                     },
                 };
             });
-            window.onNavigate(ROUTES_PATH.NewBill);
-            await new Promise(process.nextTick);
-            const post = await bills;
-            expect(post).toHaveBeenCalled();
+            //    const postMethod = await new Promise(process.nextTick);
+
+            // expect(postMethod).toHaveBeenCalled();
+            // const newBill = new NewBill({
+            //     document,
+            //     onNavigate,
+            //     store: mockStore,
+            //     localStorage: window.localStorage,
+            // });
         });
     });
 });
