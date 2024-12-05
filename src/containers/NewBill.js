@@ -6,7 +6,7 @@ export default class NewBill {
         this.document = document;
         this.onNavigate = onNavigate;
         this.store = store;
-        console.log(this.store);
+        // console.log(this.store);
         const formNewBill = this.document.querySelector(
             `form[data-testid="form-new-bill"]`
         );
