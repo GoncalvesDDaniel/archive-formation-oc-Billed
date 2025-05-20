@@ -136,7 +136,6 @@ describe("Given I am connected as an employee", () => {
 
             expect(bills.length).toBe(4);
         });
-
         test("Then if a bill has an undefined date, it should log an error", async () => {
             Object.defineProperty(window, "localStorage", {
                 value: localStorageMock,
