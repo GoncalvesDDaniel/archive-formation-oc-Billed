@@ -1,25 +1,16 @@
 /**
  * @jest-environment jsdom
  */
-
-import {
-    getAllByTestId,
-    screen,
-    fireEvent,
-    waitFor,
-} from "@testing-library/dom";
+import { screen, waitFor } from "@testing-library/dom";
 import { bills } from "../fixtures/bills.js";
 import { ROUTES, ROUTES_PATH } from "../constants/routes";
 import { localStorageMock } from "../__mocks__/localStorage.js";
 import store from "../__mocks__/store.js";
-import "@testing-library/jest-dom/extend-expect.js";
-
 import router from "../app/Router.js";
-import NewBill from "../containers/NewBill.js";
-import NewBillUI from "../views/NewBillUI.js";
 import Bills from "../containers/Bills.js";
 import BillsUI from "../views/BillsUI.js";
 import userEvent from "@testing-library/user-event";
+import "@testing-library/jest-dom/extend-expect.js";
 
 describe("Given I am connected as an employee", () => {
     describe("When I am on Bills Page", () => {
@@ -55,80 +46,139 @@ describe("Given I am connected as an employee", () => {
             const datesSorted = [...dates].sort(antiChrono);
             expect(dates).toEqual(datesSorted);
         });
-        test("Then, it should open modal when new bill button is clicked", () => {
-            document.body.innerHTML = BillsUI({ data: bills });
-            const onNavigate = (pathname) => {
-                document.body.innerHTML = ROUTES({ pathname });
-            };
-            const billsConstructor = new Bills({
-                document,
-                onNavigate,
-                store: null,
-                localStorage: window.localStorage,
-                handleClickNewBill: jest.fn(),
+        test("Then clicking the New Bill button should show NewBill form", async () => {
+            Object.defineProperty(window, "localStorage", {
+                value: localStorageMock,
             });
-
-            const clickNewBill = jest.fn(billsConstructor.handleClickNewBill);
-            const buttonNewBill = screen.getByTestId("btn-new-bill");
-            expect(buttonNewBill).toBeTruthy();
-            buttonNewBill.addEventListener("click", () => clickNewBill());
-            userEvent.click(buttonNewBill);
-            expect(clickNewBill).toHaveBeenCalled();
-            expect(screen.getByTestId("form-new-bill")).toBeVisible();
-        });
-        test("Then, it should open the related bill when eye icon button is clicked", () => {
-            document.body.innerHTML = BillsUI({ data: bills });
-            const onNavigate = (pathname) => {
-                document.body.innerHTML = ROUTES({ pathname });
-            };
-            const billsConstructor = new Bills({
-                document,
-                onNavigate,
-                store: null,
-                localStorage: window.localStorage,
-                handleClickIconEye: jest.fn(),
-            });
-            // const mockIconEye = document.createElement("div");
-            // mockIconEye.id = "eye";
-            // mockIconEye.dataset.testid = "icon-eye";
-            // mockIconEye.dataset.billUrl =
-            //     "https://test.storage.tld/v0/b/billable-677b6.a…f-1.jpg?alt=media&token=c1640e12-a24b-4b11-ae52-529112e9602a";
-            $.fn.modal = jest.fn();
-            const handleClickIconEye = jest.fn(
-                billsConstructor.handleClickIconEye
-            );
-
-            const buttonsIconEye = screen.getAllByTestId("icon-eye");
-
-            expect(buttonsIconEye).toBeTruthy();
-            buttonsIconEye.forEach((btn) =>
-                btn.addEventListener("click", handleClickIconEye(btn))
-            );
-            // fireEvent("click", buttonsIconEye[0]);
-            userEvent.click(buttonsIconEye[0]);
-            expect(handleClickIconEye).toHaveBeenCalled();
-        });
-
-        test(" GET Bills", async () => {
-            localStorage.setItem(
+            window.localStorage.setItem(
                 "user",
-                JSON.stringify({ type: "Employee", email: "a@a" })
+                JSON.stringify({ type: "Employee" })
             );
             const root = document.createElement("div");
             root.setAttribute("id", "root");
             document.body.append(root);
             router();
             window.onNavigate(ROUTES_PATH.Bills);
+
+            const onNavigateMock = jest.fn();
             const mockedStore = store;
-            const billsConstructor = new Bills({
+
+            const billsInstance = new Bills({
                 document,
-                onNavigate,
+                onNavigate: onNavigateMock,
                 store: mockedStore,
                 localStorage: window.localStorage,
             });
-            const getBills = jest.fn(billsConstructor.getBills);
-            const results = await getBills();
-            expect(results.length).toBe(4);
+
+            const newBillButton = screen.getByTestId("btn-new-bill");
+            expect(newBillButton).toBeTruthy();
+            userEvent.click(newBillButton);
+            await waitFor(() => screen.getByText("Envoyer une note de frais"));
+            expect(screen.getByText("Envoyer une note de frais")).toBeTruthy();
+            expect(screen.getByTestId("form-new-bill")).toBeTruthy();
+        });
+        test("Then clicking an eye icon should display the modal", () => {
+            Object.defineProperty(window, "localStorage", {
+                value: localStorageMock,
+            });
+            window.localStorage.setItem(
+                "user",
+                JSON.stringify({ type: "Employee" })
+            );
+
+            document.body.innerHTML = BillsUI({ data: bills });
+
+            $.fn.modal = jest.fn();
+
+            const billsInstance = new Bills({
+                document,
+                onNavigate: jest.fn(),
+                store: null,
+                localStorage: window.localStorage,
+            });
+
+            const handleClickIconEyeSpy = jest.spyOn(
+                billsInstance,
+                "handleClickIconEye"
+            );
+
+            const eyeIcons = screen.getAllByTestId("icon-eye");
+            const firstEyeIcon = eyeIcons[0];
+
+            userEvent.click(firstEyeIcon);
+
+            expect(handleClickIconEyeSpy).toHaveBeenCalledTimes(1);
+            expect(handleClickIconEyeSpy).toHaveBeenCalledWith(firstEyeIcon);
+
+            expect($.fn.modal).toHaveBeenCalledTimes(1);
+            expect($.fn.modal).toHaveBeenCalledWith("show");
+
+            handleClickIconEyeSpy.mockRestore();
+        });
+        test("Then getBills method should fetch bills from the mock store", async () => {
+            Object.defineProperty(window, "localStorage", {
+                value: localStorageMock,
+            });
+            window.localStorage.setItem(
+                "user",
+                JSON.stringify({ type: "Employee" })
+            );
+            const mockedStore = store;
+
+            const billsInstance = new Bills({
+                document,
+                onNavigate: jest.fn(),
+                store: mockedStore,
+                localStorage: window.localStorage,
+            });
+
+            const bills = await billsInstance.getBills();
+
+            expect(bills.length).toBe(4);
+        });
+
+        test("Then if a bill has an undefined date, it should log an error", async () => {
+            Object.defineProperty(window, "localStorage", {
+                value: localStorageMock,
+            });
+            window.localStorage.setItem(
+                "user",
+                JSON.stringify({ type: "Employee" })
+            );
+
+            const billsWithUndefinedDate = [
+                {
+                    id: "1",
+                    date: undefined,
+                    status: "pending",
+                    name: "Bill avec date undefined",
+                    amount: 100,
+                },
+            ];
+
+            const mockStoreWithProblematicData = {
+                bills: () => ({
+                    list: jest.fn().mockResolvedValue(billsWithUndefinedDate),
+                }),
+            };
+
+            const billsInstance = new Bills({
+                document,
+                onNavigate: jest.fn(),
+                store: mockStoreWithProblematicData,
+                localStorage: window.localStorage,
+            });
+
+            const consoleLogSpy = jest
+                .spyOn(console, "log")
+                .mockImplementation(() => {});
+
+            const resultBills = await billsInstance.getBills();
+
+            expect(resultBills.length).toBe(1);
+            expect(consoleLogSpy).toHaveBeenCalledTimes(1);
+
+            consoleLogSpy.mockRestore();
         });
     });
 });
