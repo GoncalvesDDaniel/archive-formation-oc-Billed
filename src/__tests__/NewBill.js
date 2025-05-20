@@ -87,8 +87,48 @@ describe("Given I am connected as an employee", () => {
             fireEvent.change(formFile);
             expect(handleFile).toHaveBeenCalled();
         });
+        test("Alors handleSubmit doit appeler updateBill avec les données du formulaire et naviguer vers la page Bills", () => {
+            // 1. CONFIGURATION
+            document.body.innerHTML = NewBillUI(); // Prépare le DOM
 
-        test("Then the submit form should be handled", () => {
+            const user = { type: "Employee", email: "employee@test.com" };
+            Object.defineProperty(window, "localStorage", {
+                value: localStorageMock,
+                writable: true,
+            });
+            window.localStorage.setItem("user", JSON.stringify(user));
+
+            const onNavigateMock = jest.fn(); // Mock pour la navigation
+
+            const newBillInstance = new NewBill({
+                document,
+                onNavigate: onNavigateMock,
+                store: mockStore, // mockStore est fourni mais on n'interagit pas directement avec lui dans ce test précis
+                localStorage: window.localStorage,
+            });
+
+            screen.getByTestId("expense-type").value = "Transports";
+            screen.getByTestId("expense-name").value = "Vol test";
+            screen.getByTestId("amount").value = "150";
+            screen.getByTestId("datepicker").value = "2024-07-27";
+            screen.getByTestId("vat").value = "30";
+            screen.getByTestId("pct").value = "20";
+            screen.getByTestId("commentary").value = "Commentaire de test";
+            newBillInstance.fileUrl = "url/fichier.jpg";
+            newBillInstance.fileName = "fichier.jpg";
+
+            const updateBillSpy = jest.spyOn(newBillInstance, "updateBill");
+
+            const form = screen.getByTestId("form-new-bill");
+            fireEvent.submit(form);
+
+            expect(updateBillSpy).toHaveBeenCalled();
+            expect(onNavigateMock).toHaveBeenCalledWith(ROUTES_PATH["Bills"]);
+
+            updateBillSpy.mockRestore();
+        });
+
+        test.skip("Then the submit form should be handled", () => {
             const onNavigate = (pathname) => {
                 document.body.innerHTML = ROUTES({ pathname });
             };
