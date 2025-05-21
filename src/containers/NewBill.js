@@ -19,12 +19,11 @@ export default class NewBill {
     }
     handleChangeFile = (e) => {
         e.preventDefault();
-        const fileInputElement = e.target;
         const file = this.document.querySelector(`input[data-testid="file"]`)
             .files[0];
         const validMimeTypes = ["image/jpeg", "image/jpg", "image/png"];
         if (!validMimeTypes.includes(file.type)) {
-            fileInputElement.value = "";
+            e.target.value = "";
             return;
         }
         const formData = new FormData();

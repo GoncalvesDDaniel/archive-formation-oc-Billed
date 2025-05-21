@@ -7,7 +7,6 @@ import NewBillUI from "../views/NewBillUI.js";
 import NewBill from "../containers/NewBill.js";
 import store from "../__mocks__/store.js";
 import { localStorageMock } from "../__mocks__/localStorage.js";
-import router from "../app/Router.js";
 import { ROUTES_PATH } from "../constants/routes.js";
 
 describe("Given I am connected as an employee", () => {
@@ -33,9 +32,10 @@ describe("Given I am connected as an employee", () => {
             localStorage: window.localStorage,
         });
     });
+    afterEach(() => jest.clearAllMocks());
 
-    describe("When I upload a file with an invalid format", () => {
-        test("Then the file input should be cleared", () => {
+    describe("When I upload a file", () => {
+        test("Then the file input should be cleared for an invalide file", () => {
             const fileInput = screen.getByTestId("file");
             const file = new File(["file"], "document.pdf", {
                 type: "application/pdf",
@@ -45,9 +45,7 @@ describe("Given I am connected as an employee", () => {
 
             expect(fileInput.value).toBe("");
         });
-    });
 
-    describe("When I upload a valid image file", () => {
         test("Then the store should be called and fileUrl and billId should be set", async () => {
             const fileInput = screen.getByTestId("file");
             const file = new File(["image"], "image.png", {
@@ -66,7 +64,7 @@ describe("Given I am connected as an employee", () => {
     });
 
     describe("When I submit the form", () => {
-        test("Then updateBill should be called and I should be navigated to Bills page", () => {
+        test("Then updateBill and navigate should be called", () => {
             const updateBillSpy = jest.spyOn(newBill, "updateBill");
             const onNavigateSpy = jest.fn();
             newBill.onNavigate = onNavigateSpy;
