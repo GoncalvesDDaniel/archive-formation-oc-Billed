@@ -1,3 +1,17 @@
+# SaaS RH - Debug et Tests
+
+## 📖 Contexte du projet
+Formation **Développeur d’application JavaScript React** (OpenClassrooms).  
+L'objectif : Corriger les bugs d'une application SaaS RH, et d'écrire des tests unitaires, d’intégration, ainsi que d’élaborer un plan de test end-to-end manuel.
+
+Le travail s’effectue sur une application front-end connectée à une API back-end à lancer en local.
+
+## 🎯 Mission principale
+- Installer le back-end et le front-end depuis les repos dédiés.  
+- Corriger les bugs existants.  
+- Rédiger et implémenter des tests unitaires et d’intégration en JavaScript avec Jest.  
+- Utiliser le Chrome Debugger pour identifier et résoudre des problèmes.  
+- Concevoir un plan de test end-to-end manuel pour le parcours employé.
 
 ## L'architecture du projet :
 Ce projet, dit frontend, est connecté à un service API backend que vous devez aussi lancer en local.
